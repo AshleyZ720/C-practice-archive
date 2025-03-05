@@ -1,0 +1,257 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <sys/ioctl.h>
+
+#define XL 100
+#define YL 48
+#define SLEEP_s 500000
+
+void flush_screen(int, int);
+struct snake* addnode(void);
+void addbody_still(void);
+void addbody_move(void);
+void create_food(void);
+char getinput(void);
+
+struct point{
+    int x;
+    int y;
+};
+
+struct snake{
+    struct point snakebody;
+    struct snake *prev;
+    struct snake *next;    
+};
+
+
+struct snake* g_pHEAD = NULL;
+struct snake* g_pTAIL = NULL;
+struct point food;
+
+int main()
+{
+    printf("Hello, mate! Are you ready for the game?\nIf you are, plz hit ENTER.\n");
+    int i = getchar(), timecnt;
+    if(i != 10 && i != 14)
+    {
+        printf("Fine. Hope to see you next time!\n");
+        return -1;        
+    }
+    else
+    {   
+        struct point wallsize;
+        wallsize.x = XL;
+        wallsize.y = YL;
+        //struct snake root_snake;
+        for(int snakesize=4; snakesize > 0; snakesize--)
+        {
+            addbody_still();        
+        }
+        while(1)
+        {
+            flush_screen(wallsize.x, wallsize.y); 
+           
+            int input = getinput();
+            printf("%d\n",input);         
+            
+            usleep(SLEEP_s);
+            timecnt++;
+            if(timecnt%20 == 1)
+            {
+                create_food();            
+            }
+        }
+        //printf("%d %d\n", g_pHEAD->snakebody.x, g_pHEAD->snakebody.y);
+
+    }
+    return 0;
+}
+
+void flush_screen(int x, int y)
+{
+    system("clear");
+    struct point node;
+    int tmp;
+    char check = 0;
+    for(node.y=0; node.y < y; node.y++)
+    {
+        for(node.x=0; node.x < x; node.x++)
+        {           
+            if(node.y == 0)
+                printf("#");             
+            if(node.x == 0 && node.y != 0)
+            {
+                printf("\n#");
+            }
+                if(node.y != y-1 && node.y != 0 && node.x != 0)
+                {
+                   
+                        if(node.y ==food.y && node.x == food.x)
+                        {
+                            check = 'f';
+                        }
+                            if(node.y == g_pHEAD->snakebody.y && node.x == g_pHEAD->snakebody.x)
+                            {
+                                check = 'h';
+                            }
+                        for(struct snake* psort = g_pHEAD->next; psort != NULL; psort = psort->next)
+                        {
+                            if(node.y == psort->snakebody.y && node.x == psort->snakebody.x)
+                            {
+                                check = 'b';
+                            }
+                        } 
+                        if(check == 'h')
+                        {
+                            printf("O");
+                            check = 0;
+                        } 
+                        else if(check == 'b')
+                        {
+                            printf("0");
+                            check = 0;                            
+                        }
+                        else if(node.x == x-1)
+                            printf("#");                        
+                        else if(check == 'f')
+                        {
+                            printf("G");
+                            check = 0;
+                        }
+                        else 
+                            printf(" ");                        
+                                 
+                }            
+            if(node.y == y-1 && node.x != 0)
+                printf("#");
+            if(node.y == y-1 && node.x == x-1) 
+                printf("\n");
+        }
+    }
+}
+
+struct snake* addnode(void)
+{
+    struct snake* p = NULL;
+    p = (struct snake*)malloc(sizeof (struct snake));
+    memset(p, 0, sizeof(struct snake));
+    return p;
+}
+
+void create_food(void)
+{
+	time_t t;
+    srand((unsigned) time(&t));
+	food.x = 1 + (int)rand()%(XL-1);
+    srand((unsigned) time(&t));
+	food.y = 1 + (int)rand()%(YL-1);    
+	//printf("%d %d", food.x, food.y);
+	
+}
+
+void addbody_still(void)
+{
+        struct snake *pnew;
+        pnew = addnode();
+        pnew->next = NULL;
+        pnew->prev = NULL;
+        if(g_pHEAD == NULL)
+        {
+            g_pHEAD = pnew;
+            g_pHEAD->snakebody.x = XL/2;
+            g_pHEAD->snakebody.y = YL/2;
+        }
+        else
+        {
+            g_pTAIL->next = pnew;
+            pnew->snakebody.x = g_pTAIL->snakebody.x;
+            pnew->snakebody.y = g_pTAIL->snakebody.y+1;
+            pnew->prev = g_pTAIL;
+        }
+        g_pTAIL = pnew;
+  
+}
+
+void addbody_move(void)
+{
+        struct snake *pnew;
+        pnew = addnode();
+        pnew->next = NULL;
+        pnew->prev = NULL;
+        if(g_pHEAD == NULL)
+        {
+            g_pHEAD = pnew;
+            g_pHEAD->snakebody.x = XL/2;
+            g_pHEAD->snakebody.y = YL/2;
+        }
+        else
+        {
+            g_pTAIL->next = pnew;
+            pnew->snakebody.x = g_pTAIL->snakebody.x;
+            pnew->snakebody.y = g_pTAIL->snakebody.y;
+            pnew->prev = g_pTAIL;
+        }
+        g_pTAIL = pnew;
+}
+
+int setlflag(int flags, int enable)
+{
+    struct termios attr;
+    tcgetattr(STDIN_FILENO, &attr);
+    if (enable) {
+        attr.c_lflag |= flags; 
+    } else {
+        attr.c_lflag &= ~flags; 
+    }
+    return tcsetattr(STDIN_FILENO, TCIFLUSH, &attr);
+}
+
+int setcc(int min, int timeout)
+{
+    struct termios attr;
+    tcgetattr(STDIN_FILENO, &attr);
+    attr.c_cc[VMIN] = min;
+    attr.c_cc[VTIME] = timeout;
+    return tcsetattr(STDIN_FILENO, TCIFLUSH, &attr);
+}
+
+
+char getinput(void)
+{
+    int attr = 1;
+    int len = 0;
+    int total = 0;
+    char buf[128];
+    memset(buf, 0, sizeof(buf));
+    ioctl(STDIN_FILENO, FIONBIO, &attr);
+    setlflag(ECHO | ICANON, 0);
+    len = read(STDIN_FILENO, &buf[0], 1);
+    setcc(0, 0);
+    if (len > 0) 
+
+    
+           
+        return *buf;  
+
+        
+
+    else 
+        return 0;
+        
+}
+
+struct snake snake_move(int input)
+{
+    switch(input)
+    {
+        case 77: case 57:
+    }
+}
+

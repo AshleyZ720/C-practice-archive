@@ -1,0 +1,28 @@
+#include <stdio.h>
+int main()
+{
+    int i,j,k,l;
+
+    printf("Please type in two integers (remember a space between them):");
+    scanf("%d %d", &i, &j);
+
+    k=(i<j)?i:j;
+    for (; k>0; k--)
+    {
+        if (i%k==0 && j%k==0)
+        {
+            printf("The greatest common factor is %d.\n", k);
+            break;
+        }
+    }
+
+    l=(i>j)?i:j;
+    for (;; l++)
+    {
+        if (l%i==0 && l%j==0)
+        {
+            printf("The lowest common multiple is %d.\n", l);
+            break;
+        }
+    }
+}

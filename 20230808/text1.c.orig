@@ -1,0 +1,39 @@
+#include <stdio.h>
+int main()
+{
+    printf("Please type in dd/mm/yyyy:");
+    int day, month, year;
+    scanf("%d/%d/%d", &day, &month, &year);
+    int i,j,k;
+
+    for (i=1; i<=month-1; i++)
+    {
+        if(i=1||3||5||7||8||10||12)
+        {
+            j=31;
+            k=k+j;
+        }
+        else
+        {
+            if(i=2)
+            {
+                if((year%4==0 && year%100!=0)||year%400==0)
+                {
+                    j=29;
+                    k=k+j;
+                }
+                else
+                {
+                    j=28;
+                    k=k+j;
+                }
+            }
+            else 
+            {
+                j=30;
+                k=k+j;
+            }
+        }
+    }
+    printf("The result is %d.\n",k+day);
+}
